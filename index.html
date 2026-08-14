@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1f2937" />
+  <title>Alemão Produtos da Roça</title>
+  <style>
+    :root{--bg:#f5f7fa;--card:#fff;--text:#172033;--muted:#667085;--line:#e5e7eb;--primary:#1f2937;--accent:#b7791f;--danger:#b42318;--success:#067647}
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+    .app{display:flex;min-height:100vh}.sidebar{width:250px;background:var(--primary);color:#fff;padding:22px 16px;position:fixed;inset:0 auto 0 0}.brand{font-weight:800;font-size:20px;line-height:1.2;margin-bottom:6px}.brand small{display:block;font-size:12px;font-weight:400;opacity:.75;margin-top:5px}.nav{margin-top:25px;display:grid;gap:7px}.nav button{border:0;background:transparent;color:#fff;text-align:left;padding:12px;border-radius:10px;cursor:pointer;font-size:15px}.nav button:hover,.nav button.active{background:#374151}.main{margin-left:250px;width:calc(100% - 250px);padding:24px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}.top h1{margin:0;font-size:26px}.date{color:var(--muted);font-size:14px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.03)}.card .label{color:var(--muted);font-size:13px}.card .value{font-size:25px;font-weight:800;margin-top:8px}.section{margin-top:20px}.section h2{font-size:18px;margin:0 0 12px}.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.actions{display:flex;flex-wrap:wrap;gap:10px}.btn{border:0;border-radius:10px;padding:11px 14px;cursor:pointer;font-weight:700;background:var(--primary);color:#fff}.btn.alt{background:#fff;color:var(--text);border:1px solid var(--line)}.btn.accent{background:var(--accent)}.btn.danger{background:var(--danger)}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:11px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}.table th{color:var(--muted);font-weight:700}.form{display:grid;gap:12px}.form.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #d0d5dd;border-radius:9px;background:#fff}.hidden{display:none}.empty{padding:30px;text-align:center;color:var(--muted)}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2f6;font-size:12px}.ok{color:var(--success);font-weight:700}.bad{color:var(--danger);font-weight:700}
+    @media(max-width:900px){.sidebar{width:72px;padding:16px 8px}.brand{font-size:0;text-align:center}.brand:before{content:'A';font-size:24px}.brand small{display:none}.nav button{font-size:0;text-align:center}.nav button::first-letter{font-size:20px}.main{margin-left:72px;width:calc(100% - 72px);padding:16px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.form.grid{grid-template-columns:1fr}.top h1{font-size:22px}}
+    @media(max-width:560px){.cards{grid-template-columns:1fr}.main{padding:12px}.card .value{font-size:22px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">Alemão Produtos da Roça<small>Gestão do negócio</small></div>
+    <nav class="nav">
+      <button onclick="showPage('dashboard')">🏠 Dashboard</button>
+      <button onclick="showPage('vendas')">🧾 Vendas</button>
+      <button onclick="showPage('produtos')">🌭 Produtos</button>
+      <button onclick="showPage('estoque')">📦 Estoque</button>
+      <button onclick="showPage('clientes')">👥 Clientes</button>
+      <button onclick="showPage('caixa')">💰 Caixa</button>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="top"><div><h1 id="pageTitle">Dashboard</h1><div class="date" id="today"></div></div><button class="btn accent" onclick="quickSale()">+ Nova venda</button></div>
+
+    <section id="dashboard" class="page">
+      <div class="cards">
+        <div class="card"><div class="label">Vendas no mês</div><div class="value" id="kpiSales">R$ 0,00</div></div>
+        <div class="card"><div class="label">Lucro estimado</div><div class="value" id="kpiProfit">R$ 0,00</div></div>
+        <div class="card"><div class="label">Clientes</div><div class="value" id="kpiClients">0</div></div>
+        <div class="card"><div class="label">Produtos cadastrados</div><div class="value" id="kpiProducts">0</div></div>
+      </div>
+      <div class="grid2 section">
+        <div class="panel"><h2>Ações rápidas</h2><div class="actions"><button class="btn" onclick="showPage('vendas')">Registrar venda</button><button class="btn alt" onclick="showPage('produtos')">Cadastrar produto</button><button class="btn alt" onclick="showPage('clientes')">Cadastrar cliente</button><button class="btn alt" onclick="showPage('estoque')">Ajustar estoque</button></div></div>
+        <div class="panel"><h2>Estoque baixo</h2><div id="lowStock"></div></div>
+      </div>
+      <div class="panel section"><h2>Últimas vendas</h2><div id="recentSales"></div></div>
+    </section>
+
+    <section id="vendas" class="page hidden">
+      <div class="panel"><h2>Nova venda</h2><form class="form grid" onsubmit="addSale(event)"><div class="field"><label>Cliente</label><select id="saleClient"></select></div><div class="field"><label>Produto</label><select id="saleProduct" onchange="updateSalePrice()"></select></div><div class="field"><label>Quantidade</label><input id="saleQty" type="number" min="1" value="1" required></div><div class="field"><label>Preço unitário</label><input id="salePrice" type="number" step="0.01" min="0" required></div><div class="field"><label>Pagamento</label><select id="salePayment"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Fiado</option></select></div><div class="field" style="display:flex;align-items:end"><button class="btn" type="submit">Salvar venda</button></div></form></div>
+      <div class="panel section"><h2>Histórico de vendas</h2><div id="salesTable"></div></div>
+    </section>
+
+    <section id="produtos" class="page hidden">
+      <div class="panel"><h2>Novo produto</h2><form class="form grid" onsubmit="addProduct(event)"><div class="field"><label>Produto</label><input id="pName" required placeholder="Ex.: Linguiça artesanal"></div><div class="field"><label>Categoria</label><input id="pCategory" placeholder="Linguiças, queijos, doces..."></div><div class="field"><label>Custo</label><input id="pCost" type="number" step="0.01" min="0" required></div><div class="field"><label>Preço de venda</label><input id="pPrice" type="number" step="0.01" min="0" required></div><div class="field"><label>Estoque inicial</label><input id="pStock" type="number" step="1" min="0" value="0" required></div><div class="field"><label>Estoque mínimo</label><input id="pMin" type="number" step="1" min="0" value="2" required></div><div><button class="btn" type="submit">Cadastrar produto</button></div></form></div>
+      <div class="panel section"><h2>Produtos</h2><div id="productsTable"></div></div>
+    </section>
+
+    <section id="estoque" class="page hidden"><div class="panel"><h2>Movimentação de estoque</h2><form class="form grid" onsubmit="stockMove(event)"><div class="field"><label>Produto</label><select id="stockProduct"></select></div><div class="field"><label>Tipo</label><select id="stockType"><option value="in">Entrada</option><option value="out">Saída</option><option value="adjust">Ajuste</option></select></div><div class="field"><label>Quantidade</label><input id="stockQty" type="number" min="0" step="1" required></div><div class="field" style="display:flex;align-items:end"><button class="btn" type="submit">Salvar movimentação</button></div></form></div><div class="panel section"><h2>Estoque atual</h2><div id="stockTable"></div></div></section>
+
+    <section id="clientes" class="page hidden"><div class="panel"><h2>Novo cliente</h2><form class="form grid" onsubmit="addClient(event)"><div class="field"><label>Nome</label><input id="cName" required></div><div class="field"><label>Telefone</label><input id="cPhone"></div><div class="field"><label>Bairro/Cidade</label><input id="cLocation"></div><div class="field"><label>Observações</label><input id="cNotes"></div><div><button class="btn" type="submit">Cadastrar cliente</button></div></form></div><div class="panel section"><h2>Clientes</h2><div id="clientsTable"></div></div></section>
+
+    <section id="caixa" class="page hidden"><div class="cards"><div class="card"><div class="label">Entradas</div><div class="value" id="cashIn">R$ 0,00</div></div><div class="card"><div class="label">Saídas</div><div class="value" id="cashOut">R$ 0,00</div></div><div class="card"><div class="label">Saldo</div><div class="value" id="cashBalance">R$ 0,00</div></div></div><div class="panel section"><h2>Movimentações</h2><div id="cashTable"></div></div></section>
+  </main>
+</div>
+<script>
+const KEY='alemao_erp_v1';
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{products:[],clients:[],sales:[],cash:[],stockMoves:[]};
+const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(db));renderAll()};
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.getElementById('pageTitle').textContent={dashboard:'Dashboard',vendas:'Vendas',produtos:'Produtos',estoque:'Estoque',clientes:'Clientes',caixa:'Caixa'}[id];refreshSelects();renderAll()}
+function addProduct(e){e.preventDefault();db.products.push({id:crypto.randomUUID(),name:pName.value.trim(),category:pCategory.value.trim(),cost:+pCost.value,price:+pPrice.value,stock:+pStock.value,min:+pMin.value});e.target.reset();save();showPage('produtos')}
+function addClient(e){e.preventDefault();db.clients.push({id:crypto.randomUUID(),name:cName.value.trim(),phone:cPhone.value.trim(),location:cLocation.value.trim(),notes:cNotes.value.trim()});e.target.reset();save();showPage('clientes')}
+function updateSalePrice(){const p=db.products.find(x=>x.id===saleProduct.value);salePrice.value=p?p.price:0}
+function addSale(e){e.preventDefault();const p=db.products.find(x=>x.id===saleProduct.value);if(!p)return alert('Cadastre um produto primeiro.');const qty=+saleQty.value;if(qty>p.stock)return alert('Estoque insuficiente.');const total=qty*+salePrice.value;const client=db.clients.find(x=>x.id===saleClient.value);p.stock-=qty;const sale={id:crypto.randomUUID(),date:new Date().toISOString(),clientId:client?.id||'',clientName:client?.name||'Cliente balcão',productId:p.id,productName:p.name,qty,price:+salePrice.value,total,cost:p.cost*qty,payment:salePayment.value};db.sales.unshift(sale);db.cash.unshift({id:crypto.randomUUID(),date:sale.date,type:'in',amount:total,description:'Venda - '+p.name,payment:sale.payment});e.target.reset();save();alert('Venda registrada com sucesso!');showPage('vendas')}
+function stockMove(e){e.preventDefault();const p=db.products.find(x=>x.id===stockProduct.value);if(!p)return;const qty=+stockQty.value;if(stockType.value==='in')p.stock+=qty;else if(stockType.value==='out'){if(qty>p.stock)return alert('Estoque insuficiente.');p.stock-=qty}else p.stock=qty;db.stockMoves.unshift({date:new Date().toISOString(),product:p.name,type:stockType.value,qty});e.target.reset();save();showPage('estoque')}
+function quickSale(){showPage('vendas');setTimeout(()=>document.getElementById('saleProduct')?.focus(),50)}
+function refreshSelects(){saleClient.innerHTML='<option value="">Cliente balcão</option>'+db.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');const opts=db.products.map(p=>`<option value="${p.id}">${esc(p.name)} — estoque ${p.stock}</option>`).join('');saleProduct.innerHTML=opts;stockProduct.innerHTML=opts;updateSalePrice()}
+function renderAll(){const now=new Date();today.textContent=now.toLocaleDateString('pt-BR',{dateStyle:'full'});const month=now.toISOString().slice(0,7);const sales=db.sales.filter(s=>s.date.slice(0,7)===month);const revenue=sales.reduce((a,s)=>a+s.total,0);const profit=sales.reduce((a,s)=>a+(s.total-s.cost),0);kpiSales.textContent=money(revenue);kpiProfit.textContent=money(profit);kpiClients.textContent=db.clients.length;kpiProducts.textContent=db.products.length;lowStock.innerHTML=db.products.filter(p=>p.stock<=p.min).map(p=>`<div style="padding:8px 0;border-bottom:1px solid #eee">${esc(p.name)} — <span class="bad">${p.stock} un.</span></div>`).join('')||'<div class="empty">Nenhum produto com estoque baixo.</div>';recentSales.innerHTML=sales.slice(0,8).map(s=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee"><span>${esc(s.productName)} × ${s.qty}</span><strong>${money(s.total)}</strong></div>`).join('')||'<div class="empty">Nenhuma venda neste mês.</div>';productsTable.innerHTML=table(db.products,['Produto','Categoria','Custo','Venda','Estoque','Mínimo'],p=>[esc(p.name),esc(p.category||'-'),money(p.cost),money(p.price),p.stock,p.min]);clientsTable.innerHTML=table(db.clients,['Nome','Telefone','Local','Observações'],c=>[esc(c.name),esc(c.phone||'-'),esc(c.location||'-'),esc(c.notes||'-')]);stockTable.innerHTML=table(db.products,['Produto','Estoque','Mínimo','Situação'],p=>[esc(p.name),p.stock,p.min,p.stock<=p.min?'<span class="bad">Comprar</span>':'<span class="ok">OK</span>']);salesTable.innerHTML=table(db.sales,['Data','Cliente','Produto','Qtd.','Pagamento','Total'],s=>[new Date(s.date).toLocaleDateString('pt-BR'),esc(s.clientName),esc(s.productName),s.qty,esc(s.payment),money(s.total)]);const ins=db.cash.filter(x=>x.type==='in').reduce((a,x)=>a+x.amount,0),outs=db.cash.filter(x=>x.type==='out').reduce((a,x)=>a+x.amount,0);cashIn.textContent=money(ins);cashOut.textContent=money(outs);cashBalance.textContent=money(ins-outs);cashTable.innerHTML=table(db.cash,['Data','Tipo','Descrição','Forma','Valor'],x=>[new Date(x.date).toLocaleDateString('pt-BR'),x.type==='in'?'Entrada':'Saída',esc(x.description),esc(x.payment||'-'),money(x.amount)]);refreshSelects()}
+function table(rows,headers,fn){if(!rows.length)return '<div class="empty">Nenhum registro ainda.</div>';return '<div class="table-wrap"><table class="table"><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+fn(r).map(v=>`<td>${v}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>'}
+renderAll();showPage('dashboard');
+</script>
+</body>
+</html>
