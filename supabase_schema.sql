@@ -1,6 +1,6 @@
 -- ALEMÃO PRODUTOS DA ROÇA
 -- Banco inicial para Supabase/PostgreSQL
--- Execute este arquivo no SQL Editor do Supabase.
+-- Este arquivo pode ser executado novamente com segurança.
 
 create extension if not exists pgcrypto;
 
@@ -45,6 +45,16 @@ create table if not exists public.sales (
   sold_at timestamptz not null default now(),
   notes text
 );
+
+-- Compatibilidade com uma tabela sales criada em uma tentativa anterior.
+alter table public.sales add column if not exists client_id uuid;
+alter table public.sales add column if not exists client_name text;
+alter table public.sales add column if not exists payment_method text default 'Pix';
+alter table public.sales add column if not exists total numeric(12,2) default 0;
+alter table public.sales add column if not exists total_cost numeric(12,2) default 0;
+alter table public.sales add column if not exists status text default 'completed';
+alter table public.sales add column if not exists sold_at timestamptz default now();
+alter table public.sales add column if not exists notes text;
 
 create table if not exists public.sale_items (
   id uuid primary key default gen_random_uuid(),
@@ -108,7 +118,6 @@ create index if not exists idx_stock_moves_product on public.stock_moves(product
 create index if not exists idx_cash_transactions_created_at on public.cash_transactions(created_at);
 
 -- RLS: nesta primeira etapa deixamos as tabelas protegidas.
--- Na próxima etapa vamos criar autenticação e políticas para o usuário logado.
 alter table public.products enable row level security;
 alter table public.clients enable row level security;
 alter table public.suppliers enable row level security;
