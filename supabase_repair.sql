@@ -76,6 +76,26 @@ alter table public.sales add column if not exists status text default 'completed
 alter table public.sales add column if not exists sold_at timestamptz default now();
 alter table public.sales add column if not exists notes text;
 
+-- Se total/total_cost vieram de uma estrutura antiga como colunas geradas,
+-- converte para colunas normais para o aplicativo poder gravar os valores.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='sales' AND column_name='total' AND is_generated='ALWAYS'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.sales ALTER COLUMN total DROP EXPRESSION';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='sales' AND column_name='total_cost' AND is_generated='ALWAYS'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.sales ALTER COLUMN total_cost DROP EXPRESSION';
+  END IF;
+END $$;
+alter table public.sales alter column total set default 0;
+alter table public.sales alter column total_cost set default 0;
+
 -- 5) ITENS DA VENDA
 create table if not exists public.sale_items (
   id uuid primary key default gen_random_uuid(),
@@ -98,6 +118,25 @@ alter table public.sale_items add column if not exists unit_cost numeric(12,2) d
 alter table public.sale_items add column if not exists total numeric(12,2) default 0;
 alter table public.sale_items add column if not exists total_cost numeric(12,2) default 0;
 alter table public.sale_items add column if not exists created_at timestamptz default now();
+
+-- Corrige colunas total/total_cost que possam ter sido criadas como GENERATED ALWAYS.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='sale_items' AND column_name='total' AND is_generated='ALWAYS'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.sale_items ALTER COLUMN total DROP EXPRESSION';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='sale_items' AND column_name='total_cost' AND is_generated='ALWAYS'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.sale_items ALTER COLUMN total_cost DROP EXPRESSION';
+  END IF;
+END $$;
+alter table public.sale_items alter column total set default 0;
+alter table public.sale_items alter column total_cost set default 0;
 
 -- 6) MOVIMENTAÇÕES DE ESTOQUE
 create table if not exists public.stock_moves (
@@ -168,6 +207,26 @@ alter table public.accounts_receivable add column if not exists due_date date;
 alter table public.accounts_receivable add column if not exists status text default 'open';
 alter table public.accounts_receivable add column if not exists received_at timestamptz;
 alter table public.accounts_receivable add column if not exists created_at timestamptz default now();
+
+-- 10) LIMPEZA DAS TENTATIVAS DE VENDA QUE FALHARAM ANTES DE CRIAR O ITEM.
+-- Uma venda sem nenhum item é incompleta e não deve aparecer no histórico.
+delete from public.cash_transactions ct
+where ct.reference_id is not null
+  and exists (
+    select 1 from public.sales s
+    where s.id = ct.reference_id
+      and not exists (select 1 from public.sale_items si where si.sale_id = s.id)
+  );
+
+delete from public.sales s
+where not exists (select 1 from public.sale_items si where si.sale_id = s.id);
+
+-- Atualiza nome do cliente nas vendas que possuem client_id válido.
+update public.sales s
+set client_name = c.name
+from public.clients c
+where s.client_id = c.id
+  and (s.client_name is null or s.client_name = '' or s.client_name = 'Cliente balcão');
 
 -- Índices usados pelo aplicativo
 create index if not exists idx_products_name on public.products(name);
