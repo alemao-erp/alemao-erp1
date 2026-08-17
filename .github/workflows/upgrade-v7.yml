@@ -1,0 +1,26 @@
+name: Ativar V7
+on:
+  push:
+    paths:
+      - '.github/workflows/upgrade-v7.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ativar app-v7
+        run: |
+          sed -i 's#src="./app-v6.js"#src="./app-v7.js"#g' index.html
+          sed -i 's#src="./app.js"#src="./app-v7.js"#g' index.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add index.html
+            git commit -m "feat: ativar fotos em vendas compras e estoque"
+            git push
+          fi
