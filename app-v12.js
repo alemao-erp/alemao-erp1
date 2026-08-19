@@ -34,9 +34,16 @@ function lines12(){
 }
 
 async function insertCash12(base){
-  // Bancos antigos deste projeto podem exigir também transaction_type.
-  // Testamos os valores compatíveis sem duplicar lançamento: cada tentativa com erro é rejeitada integralmente pelo Postgres.
-  const candidates=base.type==='in'?['in','income','entrada']:['out','expense','saida'];
+  // Existem versões antigas do banco em que transaction_type representa a origem
+  // do movimento (sale/purchase/expense), e não somente entrada/saída.
+  // Para uma venda, "sale" é a primeira opção. As demais mantêm compatibilidade
+  // com estruturas anteriores sem criar duplicidade: inserts rejeitados pelo
+  // constraint não deixam registro no PostgreSQL.
+  const desc=String(base.description||'').toLowerCase();
+  let candidates;
+  if(desc.startsWith('venda')) candidates=['sale','venda','income','in','entrada'];
+  else if(desc.includes('compra')) candidates=['purchase','compra','expense','out','saida'];
+  else candidates=base.type==='in'?['income','sale','in','entrada']:['expense','purchase','out','saida'];
   let lastError=null;
   for(const transaction_type of candidates){
     const {error}=await sb12.from('cash_transactions').insert({...base,transaction_type});
@@ -92,7 +99,6 @@ window.saveSale=async function(){
 
     let saleId=editSale12;
     if(editSale12){
-      // devolve estoque anterior antes de reconstruir a venda
       for(const i of oldItems){
         const p=pmap.get(i.product_id);if(!p)continue;
         const {error}=await sb12.from('products').update({stock:n12(p.stock)+n12(i.quantity)}).eq('id',p.id);if(error)throw error;
