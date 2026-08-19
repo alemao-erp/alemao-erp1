@@ -1,0 +1,24 @@
+name: Ativar V8
+on:
+  push:
+    paths:
+      - 'app-v8.js'
+      - '.github/workflows/upgrade-v8.yml'
+permissions:
+  contents: write
+jobs:
+  ativar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Atualizar index para V8
+        run: |
+          sed -i 's#./app-v7.js#./app-v8.js#g' index.html
+      - name: Commit
+        run: |
+          git config user.name "alemao-erp"
+          git config user.email "igorthomazini@gmail.com"
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "fix: ativar v8 de edição de compras"
+          git push
