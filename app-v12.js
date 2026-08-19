@@ -34,7 +34,6 @@ function lines12(){
 }
 
 async function insertCash12(base){
-  // O banco atual usa transaction_type = 'inflow' ou 'outflow'.
   const transaction_type=base.type==='in'?'inflow':'outflow';
   const {error}=await sb12.from('cash_transactions').insert({...base,transaction_type});
   if(error)throw error;
@@ -125,3 +124,5 @@ window.saveSale=async function(){
     note12('Erro ao salvar venda: '+(e?.message||e),true);
   }
 };
+
+import './app-v13.js';
