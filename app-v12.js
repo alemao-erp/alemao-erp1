@@ -34,25 +34,10 @@ function lines12(){
 }
 
 async function insertCash12(base){
-  // Existem versões antigas do banco em que transaction_type representa a origem
-  // do movimento (sale/purchase/expense), e não somente entrada/saída.
-  // Para uma venda, "sale" é a primeira opção. As demais mantêm compatibilidade
-  // com estruturas anteriores sem criar duplicidade: inserts rejeitados pelo
-  // constraint não deixam registro no PostgreSQL.
-  const desc=String(base.description||'').toLowerCase();
-  let candidates;
-  if(desc.startsWith('venda')) candidates=['sale','venda','income','in','entrada'];
-  else if(desc.includes('compra')) candidates=['purchase','compra','expense','out','saida'];
-  else candidates=base.type==='in'?['income','sale','in','entrada']:['expense','purchase','out','saida'];
-  let lastError=null;
-  for(const transaction_type of candidates){
-    const {error}=await sb12.from('cash_transactions').insert({...base,transaction_type});
-    if(!error)return;
-    lastError=error;
-    const m=String(error.message||'').toLowerCase();
-    if(!m.includes('transaction_type')&&!m.includes('check constraint')&&!m.includes('invalid input'))throw error;
-  }
-  throw lastError||new Error('Não foi possível registrar o movimento no caixa.');
+  // O banco atual usa transaction_type = 'inflow' ou 'outflow'.
+  const transaction_type=base.type==='in'?'inflow':'outflow';
+  const {error}=await sb12.from('cash_transactions').insert({...base,transaction_type});
+  if(error)throw error;
 }
 
 window.saveSale=async function(){
