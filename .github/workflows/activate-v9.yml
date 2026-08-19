@@ -1,0 +1,30 @@
+name: Ativar V9
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/activate-v9.yml'
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trocar app-v8 por app-v9
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if './app-v8.js' not in s:
+              raise SystemExit('app-v8.js nao encontrado no index.html')
+          p.write_text(s.replace('./app-v8.js','./app-v9.js'),encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'alemao-erp'
+          git config user.email 'igorthomazini@gmail.com'
+          git add index.html
+          git commit -m 'feat: ativar dashboard inteligente v9' || exit 0
+          git push
