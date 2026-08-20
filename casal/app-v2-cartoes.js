@@ -37,7 +37,8 @@ function showCards(){document.querySelectorAll('.page').forEach(x=>x.classList.a
 async function boot(){ensureUI();const{data:{session}}=await sb.auth.getSession();if(session)loadCards();sb.auth.onAuthStateChange((event,session)=>{if(session)loadCards()})}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 
-// Carregamento isolado: se Bancos falhar, Cartões e o restante do sistema continuam funcionando.
+// Módulos isolados: uma falha não deve derrubar o restante do sistema.
 import('./app-v5-bancos-seguro.js').catch(err=>console.error('Falha isolada no módulo Bancos:',err));
-// Correção isolada da folha: extras de um mês entram no salário do mês seguinte.
+import('./app-v6-receitas-despesas-salario.js').catch(err=>console.error('Falha isolada em Receitas/Despesas/Salário V6:',err));
 import('./app-v7-folha-salario.js').catch(err=>console.error('Falha isolada na folha salarial V7:',err));
+import('./app-v8-resumo-folha.js').catch(err=>console.error('Falha isolada no resumo da folha V8:',err));
