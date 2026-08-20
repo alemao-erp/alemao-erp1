@@ -1,0 +1,1 @@
+Forca uma nova publicacao do GitHub Pages apos restauracao da versao estavel.
