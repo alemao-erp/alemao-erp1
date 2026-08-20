@@ -39,3 +39,5 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 // Carregamento isolado: se Bancos falhar, Cartões e o restante do sistema continuam funcionando.
 import('./app-v5-bancos-seguro.js').catch(err=>console.error('Falha isolada no módulo Bancos:',err));
+// Correção isolada da folha: extras de um mês entram no salário do mês seguinte.
+import('./app-v7-folha-salario.js').catch(err=>console.error('Falha isolada na folha salarial V7:',err));
