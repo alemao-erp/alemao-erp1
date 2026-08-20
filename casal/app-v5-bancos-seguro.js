@@ -81,3 +81,6 @@ function showBanks(){document.querySelectorAll('.page').forEach(x=>x.classList.a
 async function boot(){try{ensureUI();const{data:{session}}=await sb.auth.getSession();if(session)await loadBanks();sb.auth.onAuthStateChange((_event,session)=>{if(session)loadBanks().catch(()=>{})})}catch(err){console.error('Módulo Bancos isolado:',err)}}
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+
+// Módulo separado para edição de receitas/despesas/dívidas e previsão salarial.
+import('./app-v6-receitas-despesas-salario.js').catch(err=>console.error('Falha isolada no módulo financeiro V6:',err));
