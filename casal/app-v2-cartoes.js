@@ -29,3 +29,4 @@ import('./app-v7-folha-salario.js').catch(e=>console.error('Folha V7 isolada:',e
 import('./app-v8-resumo-folha.js').catch(e=>console.error('Resumo folha V8 isolado:',e));
 import('./app-v9-relatorios-backup.js').catch(e=>console.error('Relatórios/backup V9 isolado:',e));
 import('./app-v10-resumo-cartoes.js').catch(e=>console.error('Resumo cartões V10 isolado:',e));
+import('./app-v11-categorias-cartoes.js').catch(e=>console.error('Categorias cartões V11 isolado:',e));
