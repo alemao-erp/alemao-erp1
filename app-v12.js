@@ -126,3 +126,4 @@ window.saveSale=async function(){
 };
 
 import './app-v13.js';
+setTimeout(()=>import('./app-v14.js'),0);
