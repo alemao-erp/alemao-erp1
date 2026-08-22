@@ -58,5 +58,3 @@ observer13.observe(document.documentElement,{subtree:true,childList:true});
 document.addEventListener('input',e=>{
   if(['productSearch','clientSearch','supplierSearch'].includes(e.target?.id)) setTimeout(applyAlphabetical13,30);
 });
-
-import './app-v14.js';
