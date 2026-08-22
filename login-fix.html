@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entrar - Alemão Produtos da Roça</title>
+<style>
+:root{--pri:#1f2937;--bad:#b42318;--ok:#067647;--muted:#667085}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#111827,#374151);min-height:100vh;display:grid;place-items:center;padding:20px}.box{width:min(430px,100%);background:#fff;border-radius:14px;padding:28px}.field{margin-top:12px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.field input{width:100%;padding:11px;border:1px solid #d0d5dd;border-radius:8px;font-size:16px}.btn{width:100%;border:0;border-radius:9px;padding:11px 13px;background:var(--pri);color:#fff;font-weight:700;cursor:pointer;margin-top:12px}.btn.alt{background:#fff;color:#172033;border:1px solid #d0d5dd}.status{display:none;padding:11px;background:#f2f4f7;border-radius:9px;margin:12px 0;line-height:1.4}.muted{color:var(--muted)}h1{margin-bottom:6px}</style>
+</head>
+<body>
+<div class="box">
+<h1>🌭 Alemão Produtos da Roça</h1>
+<p class="muted">Acesso de recuperação</p>
+<div id="status" class="status"></div>
+<form id="form">
+<div class="field"><label>E-mail</label><input id="email" type="email" autocomplete="email" required></div>
+<div class="field"><label>Senha</label><input id="password" type="password" autocomplete="current-password" required></div>
+<button id="enter" class="btn" type="submit">Entrar</button>
+</form>
+<button id="magic" class="btn alt" type="button">Enviar link por e-mail</button>
+</div>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const sb=createClient('https://gtwvtgynnguiizepzfpu.supabase.co','sb_publishable_wM7la1ds3BUugE634awmHg_Tcpe4wF-',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const status=document.getElementById('status'),btn=document.getElementById('enter');
+function show(text,error=false){status.textContent=text;status.style.display='block';status.style.color=error?'#b42318':'#067647';}
+document.getElementById('form').addEventListener('submit',async e=>{e.preventDefault();btn.disabled=true;btn.textContent='Entrando...';show('Conferindo e-mail e senha...');try{const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;if(!data.session)throw new Error('Não foi possível criar a sessão.');show('Login realizado. Abrindo o sistema...');setTimeout(()=>location.href='./',600);}catch(err){console.error(err);let m=err?.message||String(err);if(/invalid login credentials/i.test(m))m='E-mail ou senha incorretos. Confira os dados ou use “Enviar link por e-mail”.';show(m,true);btn.disabled=false;btn.textContent='Entrar';}});
+document.getElementById('magic').addEventListener('click',async()=>{const email=document.getElementById('email').value.trim();if(!email)return show('Digite seu e-mail primeiro.',true);show('Enviando link...');const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:'https://alemao-erp.github.io/alemao-erp1/',shouldCreateUser:false}});if(error)return show(error.message,true);show('Link enviado. Confira sua caixa de entrada e também o spam.');});
+const {data:{session}}=await sb.auth.getSession();if(session){show('Você já está autenticado. Abrindo o sistema...');setTimeout(()=>location.href='./',500);}
+</script>
+</body></html>
