@@ -1,55 +1,65 @@
-// Loader do ERP completo com correção do login.
-// Preserva todos os dados do Supabase e usa o app completo existente.
-import './app.js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-const SUPABASE_URL = 'https://gtwvtgynnguiizepzfpu.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_wM7la1ds3BUugE634awmHg_Tcpe4wF-';
-const STORAGE_KEY = 'sb-gtwvtgynnguiizepzfpu-auth-token';
+const SUPABASE_URL='https://gtwvtgynnguiizepzfpu.supabase.co';
+const SUPABASE_KEY='sb_publishable_wM7la1ds3BUugE634awmHg_Tcpe4wF-';
+const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+let appLoaded=false;
 
-// O app principal tinha um bloqueio durante o evento de autenticação.
-// Este login autentica diretamente, grava a sessão no formato do supabase-js
-// e recarrega o ERP. No reload, o app principal encontra a sessão e abre o painel.
-window.loginPassword = async function (event) {
+function statusMsg(text,bad=false){
+  const el=document.getElementById('loginStatus');
+  if(!el)return;
+  el.textContent=text;
+  el.style.color=bad?'#b42318':'#067647';
+  el.classList.remove('hidden');
+}
+
+async function loadFullApp(){
+  if(appLoaded)return;
+  appLoaded=true;
+  await import('./app.js');
+}
+
+window.loginPassword=async function(event){
   event.preventDefault();
-  const email = document.getElementById('loginEmail')?.value?.trim();
-  const password = document.getElementById('loginPassword')?.value || '';
-  const status = document.getElementById('loginStatus');
-
-  if (status) {
-    status.textContent = 'Entrando...';
-    status.classList.remove('hidden');
-  }
-
-  try {
-    const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY
-      },
-      body: JSON.stringify({ email, password })
+  const email=document.getElementById('loginEmail')?.value.trim();
+  const password=document.getElementById('loginPassword')?.value||'';
+  if(!email||!password)return statusMsg('Preencha e-mail e senha.',true);
+  statusMsg('Entrando...');
+  try{
+    await sb.auth.signOut({scope:'local'}).catch(()=>{});
+    const r=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password})
     });
-
-    const data = await response.json();
-    if (!response.ok || !data.access_token) {
-      throw new Error(data.msg || data.message || data.error_description || 'Não foi possível entrar.');
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.access_token||!d.refresh_token){
+      throw new Error(d.error_description||d.msg||d.message||('HTTP '+r.status));
     }
-
-    const session = {
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-      token_type: data.token_type || 'bearer',
-      expires_in: data.expires_in,
-      expires_at: data.expires_at || Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600),
-      user: data.user
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-    location.replace('./?login=ok');
-  } catch (err) {
-    if (status) {
-      status.textContent = 'Erro ao entrar: ' + (err?.message || String(err));
-      status.classList.remove('hidden');
-    }
+    const {data,error}=await sb.auth.setSession({access_token:d.access_token,refresh_token:d.refresh_token});
+    if(error||!data.session)throw new Error(error?.message||'A sessão não pôde ser criada.');
+    localStorage.setItem('erp_access_token',d.access_token);
+    localStorage.setItem('erp_user_email',d.user?.email||email);
+    statusMsg('Login aceito. Abrindo sistema...');
+    await loadFullApp();
+  }catch(err){
+    appLoaded=false;
+    statusMsg('Erro ao entrar: '+(err?.message||String(err)),true);
   }
 };
+
+window.sendMagicLink=async function(){
+  const email=document.getElementById('loginEmail')?.value.trim();
+  if(!email)return statusMsg('Informe o e-mail.',true);
+  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:'https://alemao-erp.github.io/alemao-erp1/',shouldCreateUser:false}});
+  statusMsg(error?'Erro: '+error.message:'Link enviado para o e-mail.',!!error);
+};
+
+try{
+  const {data:{session},error}=await sb.auth.getSession();
+  if(!error&&session){
+    await loadFullApp();
+  }
+}catch(e){
+  statusMsg('Informe e-mail e senha para entrar.',false);
+}
