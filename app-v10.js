@@ -1,9 +1,7 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
 const SUPABASE_URL='https://gtwvtgynnguiizepzfpu.supabase.co';
 const SUPABASE_KEY='sb_publishable_wM7la1ds3BUugE634awmHg_Tcpe4wF-';
-const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-let appLoaded=false;
+const STORAGE_KEY='sb-gtwvtgynnguiizepzfpu-auth-token';
+let loadingApp=false;
 
 function statusMsg(text,bad=false){
   const el=document.getElementById('loginStatus');
@@ -13,10 +11,27 @@ function statusMsg(text,bad=false){
   el.classList.remove('hidden');
 }
 
+function readStoredSession(){
+  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch(e){return null}
+}
+
+async function tokenIsValid(token){
+  if(!token)return false;
+  try{
+    const r=await fetch(SUPABASE_URL+'/auth/v1/user',{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+token}});
+    return r.ok;
+  }catch(e){return false}
+}
+
 async function loadFullApp(){
-  if(appLoaded)return;
-  appLoaded=true;
-  await import('./app.js');
+  if(loadingApp)return;
+  loadingApp=true;
+  try{
+    await import('./app.js?v=20260824-2');
+  }catch(e){
+    loadingApp=false;
+    statusMsg('Login aceito, mas o módulo principal não carregou: '+(e?.message||String(e)),true);
+  }
 }
 
 window.loginPassword=async function(event){
@@ -26,24 +41,29 @@ window.loginPassword=async function(event){
   if(!email||!password)return statusMsg('Preencha e-mail e senha.',true);
   statusMsg('Entrando...');
   try{
-    await sb.auth.signOut({scope:'local'}).catch(()=>{});
     const r=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{
       method:'POST',
       headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({email,password})
     });
     const d=await r.json().catch(()=>({}));
-    if(!r.ok||!d.access_token||!d.refresh_token){
+    if(!r.ok||!d.access_token){
       throw new Error(d.error_description||d.msg||d.message||('HTTP '+r.status));
     }
-    const {data,error}=await sb.auth.setSession({access_token:d.access_token,refresh_token:d.refresh_token});
-    if(error||!data.session)throw new Error(error?.message||'A sessão não pôde ser criada.');
+    const session={
+      access_token:d.access_token,
+      refresh_token:d.refresh_token,
+      token_type:d.token_type||'bearer',
+      expires_in:d.expires_in||3600,
+      expires_at:d.expires_at||Math.floor(Date.now()/1000)+Number(d.expires_in||3600),
+      user:d.user
+    };
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(session));
     localStorage.setItem('erp_access_token',d.access_token);
     localStorage.setItem('erp_user_email',d.user?.email||email);
     statusMsg('Login aceito. Abrindo sistema...');
     await loadFullApp();
   }catch(err){
-    appLoaded=false;
     statusMsg('Erro ao entrar: '+(err?.message||String(err)),true);
   }
 };
@@ -51,15 +71,22 @@ window.loginPassword=async function(event){
 window.sendMagicLink=async function(){
   const email=document.getElementById('loginEmail')?.value.trim();
   if(!email)return statusMsg('Informe o e-mail.',true);
-  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:'https://alemao-erp.github.io/alemao-erp1/',shouldCreateUser:false}});
-  statusMsg(error?'Erro: '+error.message:'Link enviado para o e-mail.',!!error);
+  statusMsg('Enviando link...');
+  try{
+    const r=await fetch(SUPABASE_URL+'/auth/v1/otp',{
+      method:'POST',
+      headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email,create_user:false,options:{email_redirect_to:'https://alemao-erp.github.io/alemao-erp1/'}})
+    });
+    if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.msg||d.message||('HTTP '+r.status));}
+    statusMsg('Link enviado para o e-mail.');
+  }catch(e){statusMsg('Erro: '+(e?.message||String(e)),true)}
 };
 
-try{
-  const {data:{session},error}=await sb.auth.getSession();
-  if(!error&&session){
+(async()=>{
+  const s=readStoredSession();
+  if(s?.access_token&&await tokenIsValid(s.access_token)){
+    statusMsg('Sessão encontrada. Abrindo sistema...');
     await loadFullApp();
   }
-}catch(e){
-  statusMsg('Informe e-mail e senha para entrar.',false);
-}
+})();
