@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alemão Produtos da Roça - ERP V4 corrigido</title>
+<style>body{font-family:Arial,sans-serif;background:#f4f6f8;color:#172033;margin:0;display:grid;place-items:center;min-height:100vh}.box{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px;max-width:720px;width:calc(100% - 40px)}.ok{color:#067647}.bad{color:#b42318}pre{white-space:pre-wrap;background:#f2f4f7;padding:12px;border-radius:9px}</style>
+</head>
+<body>
+<div class="box"><h2>Carregando ERP V4 corrigido...</h2><div id="status">Aplicando correção de sintaxe.</div></div>
+<script>
+(async()=>{
+  const st=document.getElementById('status');
+  try{
+    const r=await fetch('./erp-v4.html?v='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw new Error('Não foi possível carregar a V4. HTTP '+r.status);
+    let html=await r.text();
+    // O erro da V4 estava em declarações async coladas ao final de expressões,
+    // por exemplo: }}async function ... . Inserimos separadores seguros.
+    html=html.replace(/}}async function/g,'}};async function');
+    html=html.replace(/}}function/g,'}};function');
+    html=html.replace(/}async function/g,'};async function');
+    html=html.replace(/}function/g,'};function');
+
+    const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(Boolean);
+    for(const code of scripts){
+      try{ new Function(code); }
+      catch(e){ throw new Error('A V4 ainda contém erro de JavaScript: '+e.message); }
+    }
+    st.className='ok';
+    st.textContent='Correção aplicada. Abrindo o sistema...';
+    setTimeout(()=>{document.open();document.write(html);document.close();},150);
+  }catch(e){
+    st.className='bad';
+    st.innerHTML='<b>Não foi possível abrir.</b><pre>'+String(e.message||e)+'</pre>';
+  }
+})();
+</script>
+</body>
+</html>
