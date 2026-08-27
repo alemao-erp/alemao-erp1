@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alemão Produtos da Roça - Acesso V4</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#111827,#374151);min-height:100vh;display:grid;place-items:center;padding:20px}.box{width:min(430px,100%);background:#fff;border-radius:14px;padding:28px;box-sizing:border-box}.field{margin:10px 0}.field label{display:block;font-size:12px;color:#667085;margin-bottom:5px}.field input{width:100%;padding:10px;border:1px solid #d0d5dd;border-radius:8px;box-sizing:border-box}.btn{width:100%;border:0;border-radius:9px;padding:11px;background:#1f2937;color:#fff;font-weight:700;cursor:pointer}.status{margin-top:12px;padding:10px;background:#f2f4f7;border-radius:9px;white-space:pre-wrap}.muted{color:#667085}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>🌭 Alemão Produtos da Roça</h1>
+<p class="muted">Acesso de teste da V4</p>
+<form id="f">
+<div class="field"><label>E-mail</label><input id="e" type="email" required></div>
+<div class="field"><label>Senha</label><input id="p" type="password" required></div>
+<button class="btn">Entrar na V4</button>
+</form>
+<div id="s" class="status">Informe e-mail e senha.</div>
+</div>
+<script>
+const U='https://gtwvtgynnguiizepzfpu.supabase.co';
+const K='sb_publishable_wM7la1ds3BUugE634awmHg_Tcpe4wF-';
+const s=document.getElementById('s');
+document.getElementById('f').addEventListener('submit',async(ev)=>{
+ ev.preventDefault();
+ s.textContent='Entrando...';s.style.color='';
+ try{
+  const email=document.getElementById('e').value.trim();
+  const password=document.getElementById('p').value;
+  const r=await fetch(U+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:K,'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.access_token)throw new Error(d.error_description||d.msg||d.message||('HTTP '+r.status));
+  localStorage.setItem('erp2_access_token',d.access_token);
+  localStorage.setItem('erp2_refresh_token',d.refresh_token||'');
+  localStorage.setItem('erp2_user_email',d.user?.email||email);
+  s.textContent='Login aceito. Abrindo a V4...';s.style.color='#067647';
+  location.replace('./erp-v4.html?acesso='+Date.now());
+ }catch(err){s.textContent='Erro: '+(err?.message||String(err));s.style.color='#b42318'}
+});
+</script>
+</body>
+</html>
