@@ -11,39 +11,34 @@ body{font-family:Arial,sans-serif;background:#f4f6f8;color:#172033;margin:0;disp
 <body>
 <div class="box"><h2>Carregando ERP V5...</h2><div id="status">Preparando o sistema.</div></div>
 <script>
-(async function(){
-  var st=document.getElementById('status');
-  try{
-    st.textContent='Carregando a base do ERP...';
-    var r=await fetch('./erp-v4.html?v='+Date.now(),{cache:'no-store'});
-    if(!r.ok) throw new Error('Falha ao carregar a base V4. HTTP '+r.status);
-    var html=await r.text();
+(async()=>{
+ const st=document.getElementById('status');
+ try{
+   const r=await fetch('./erp-v4.html?v='+Date.now(),{cache:'no-store'});
+   if(!r.ok) throw new Error('Falha ao carregar a base V4. HTTP '+r.status);
+   let html=await r.text();
+   html=html
+     .replace(/}}async function/g,'}};async function')
+     .replace(/}}function/g,'}};function')
+     .replace(/}async function/g,'};async function')
+     .replace(/}function/g,'};function');
 
-    // Correções já confirmadas na V4.
-    html=html.split('}}async function').join('}};async function');
-    html=html.split('}}function').join('}};function');
-    html=html.split('}async function').join('};async function');
-    html=html.split('}function').join('};function');
+   const addon='<script src="./v5-extra.js?v='+Date.now()+'"><\/script><script src="./v5-compat.js?v='+Date.now()+'"><\/script>';
+   html=html.replace('</body>',addon+'</body>');
 
-    // Injeta as evoluções da V5 sem usar expressões regulares que quebravam o parser.
-    var addon='<script src="./v5-extra.js?v='+Date.now()+'"></'+'script>';
-    if(html.indexOf('</body>')>=0){
-      html=html.replace('</body>',addon+'</body>');
-    }else{
-      html+=addon;
-    }
+   const scriptRegex=/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi;
+   const scripts=[];
+   let m;
+   while((m=scriptRegex.exec(html))!==null){ if(m[1]) scripts.push(m[1]); }
+   for(const code of scripts){ new Function(code); }
 
-    st.className='ok';
-    st.textContent='ERP V5 pronto. Abrindo...';
-    setTimeout(function(){
-      document.open();
-      document.write(html);
-      document.close();
-    },100);
-  }catch(e){
-    st.className='bad';
-    st.innerHTML='<b>Não foi possível abrir a V5.</b><pre>'+String(e&&e.message?e.message:e)+'</pre>';
-  }
+   st.className='ok';
+   st.textContent='ERP V5 pronto. Abrindo...';
+   setTimeout(()=>{document.open();document.write(html);document.close();},120);
+ }catch(e){
+   st.className='bad';
+   st.innerHTML='<b>Não foi possível abrir a V5.</b><pre>'+String(e.message||e)+'</pre>';
+ }
 })();
 </script>
 </body>
