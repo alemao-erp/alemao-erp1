@@ -1,12 +1,12 @@
--- REMOÇÃO SEGURA DE DUPLICADOS DAS FATURAS 09/2026
--- Mantém uma única compra por cartão + data + descrição normalizada + valor + nº de parcelas.
--- Quando houver duplicata, prioriza manter a linha da categoria 'Fatura oficial 09/2026'
--- ou 'Crédito/Estorno' e remove a cópia antiga/importada junto com TODAS as parcelas dela.
+-- REMOÇÃO SEGURA DE DUPLICADOS DAS FATURAS 09/2026 - V2
+-- Corrige o erro: relation "_dups_keep" does not exist.
+-- Mantém UMA compra por cartão + data + descrição normalizada + valor + nº de parcelas.
+-- Remove primeiro as parcelas ligadas às cópias duplicadas e depois as compras duplicadas.
 -- Não altera receitas, despesas, dívidas, reserva, metas, bancos ou pagamentos de fatura.
 
 begin;
 
-create temporary table _dups_keep on commit drop as
+create temporary table _dups_remove as
 with base as (
   select
     p.id,
@@ -15,7 +15,6 @@ with base as (
     p.total_amount,
     p.installments,
     p.category,
-    lower(regexp_replace(trim(coalesce(p.description,'')), '[^a-zA-Z0-9]+', '', 'g')) as desc_norm,
     row_number() over (
       partition by
         p.card_id,
@@ -52,28 +51,22 @@ with base as (
       from public.personal_card_installments i
       where i.purchase_id=p.id
         and i.invoice_month >= date '2026-09-01'
-        and i.invoice_month <  date '2027-09-01'
+        and i.invoice_month < date '2027-09-01'
     )
 )
-select id
-from base
-where qtd>1 and rn>1;
+select id from base where qtd>1 and rn>1;
 
--- Apaga primeiro as parcelas ligadas às compras duplicadas.
+-- Remove parcelas de SOMENTE as cópias duplicadas.
 delete from public.personal_card_installments i
-using _dups_keep d
+using _dups_remove d
 where i.purchase_id=d.id;
 
--- Depois apaga somente as compras duplicadas.
+-- Remove SOMENTE as compras duplicadas.
 delete from public.personal_card_purchases p
-using _dups_keep d
+using _dups_remove d
 where p.id=d.id;
 
-commit;
-
-notify pgrst, 'reload schema';
-
--- CONFERÊNCIA 1: totais de setembro por cartão
+-- Conferência ainda dentro da mesma transação.
 select
   c.name as cartao,
   c.owner as responsavel,
@@ -84,7 +77,11 @@ where i.invoice_month=date '2026-09-01'
 group by c.name,c.owner
 order by c.owner,c.name;
 
--- CONFERÊNCIA 2: deve retornar ZERO linhas de duplicatas exatas restantes
+commit;
+
+notify pgrst, 'reload schema';
+
+-- Conferência final de duplicatas exatas: o esperado é ZERO linhas.
 with base as (
   select
     p.card_id,
