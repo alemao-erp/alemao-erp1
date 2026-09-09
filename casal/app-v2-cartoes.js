@@ -32,3 +32,4 @@ import('./app-v10-resumo-cartoes.js').catch(e=>console.error('Resumo cartões V1
 import('./app-v11-categorias-cartoes.js').catch(e=>console.error('Categorias cartões V11 isolado:',e));
 import('./app-v12-dashboard-financeiro.js').catch(e=>console.error('Dashboard financeiro V12 isolado:',e));
 import('./app-v13-baixa-rapida.js').catch(e=>console.error('Baixa rápida V13 isolada:',e));
+import('./app-v14-pagamentos-financiamentos.js').catch(e=>console.error('Pagamentos financiamentos V14 isolado:',e));
